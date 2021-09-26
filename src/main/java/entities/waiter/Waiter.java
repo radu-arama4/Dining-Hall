@@ -52,7 +52,6 @@ public class Waiter implements Runnable {
   }
 
   public void serveOrder(Order order) {
-    System.out.println("WAAAI");
     for (Table table : waitingTables) {
       if (table.getCurrentOrder().getId() == order.getId()) {
         try {

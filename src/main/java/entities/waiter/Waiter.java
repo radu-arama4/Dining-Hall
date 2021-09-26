@@ -74,7 +74,7 @@ public class Waiter implements Runnable {
   private void sentOrderToKitchen(Order order) {
     HttpURLConnection con = null;
     try {
-      URL url = new URL("http://localhost:8081/home");
+      URL url = new URL("http://host.docker.internal:8081/home");
       con = (HttpURLConnection) url.openConnection();
       con.setRequestMethod("POST");
     } catch (IOException e) {

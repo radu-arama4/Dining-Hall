@@ -53,6 +53,4 @@ public class TomcatManager implements Runnable {
       e.printStackTrace();
     }
   }
-
-
 }

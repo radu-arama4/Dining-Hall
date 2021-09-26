@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class Waiter implements Runnable {
-
   private List<Table> waitingTables = new LinkedList<>();
 
   @SneakyThrows
@@ -53,6 +52,7 @@ public class Waiter implements Runnable {
   }
 
   public void serveOrder(Order order) {
+    System.out.println("WAAAI");
     for (Table table : waitingTables) {
       if (table.getCurrentOrder().getId() == order.getId()) {
         try {
@@ -60,10 +60,11 @@ public class Waiter implements Runnable {
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
+
         table.freeTable();
         waitingTables.remove(table);
 
-        log.info("Order with ID " + order.getId() + " is being served!");
+        System.out.println("Order with ID " + order.getId() + " is being served!");
 
         return;
       }
@@ -95,14 +96,13 @@ public class Waiter implements Runnable {
       log.error(e.getMessage());
     }
 
-    try(BufferedReader br = new BufferedReader(
-            new InputStreamReader(con.getInputStream(), "utf-8"))) {
+    try (BufferedReader br =
+        new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
       StringBuilder response = new StringBuilder();
       String responseLine = null;
       while ((responseLine = br.readLine()) != null) {
         response.append(responseLine.trim());
       }
-//      System.out.println(response.toString());
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     } catch (IOException e) {

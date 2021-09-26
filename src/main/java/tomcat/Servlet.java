@@ -26,16 +26,17 @@ public class Servlet extends HttpServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     String payloadRequest = JsonUtil.getBody(req);
 
-    System.out.println("Received!");
-
     Gson gson = new Gson();
 
     Order receivedOrder = gson.fromJson(payloadRequest, Order.class);
 
     List<Waiter> waiters = DinningHallContext.getInstance().getWaiters();
 
+    System.out.println("Received ready order with ID:" + receivedOrder.getId());
+
     for (Waiter waiter:waiters){
       List<Table> waitingTables = waiter.getWaitingTables();
+
       if(waitingTables.stream().anyMatch(o-> o.getCurrentOrder().getId() == receivedOrder.getId())){
         waiter.serveOrder(receivedOrder);
       }

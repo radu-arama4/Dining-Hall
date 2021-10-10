@@ -8,8 +8,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 public class Main {
+  static Semaphore semaphore = new Semaphore(1);
+
   public static void main(String[] args) {
     ApplicationManager.startApplication();
 
@@ -29,11 +32,11 @@ public class Main {
       thread.start();
     }
 
-    while(DinningHallContext.getInstance().getFinishedOrdersCount()<10){
+    while (DinningHallContext.getInstance().getFinishedOrdersCount() < 10) {
       occupyTables();
     }
 
-//    ApplicationManager.closeApplication();
+    //    ApplicationManager.closeApplication();
   }
 
   private static List<Waiter> generateWaiters(int nrOfWaiters) {
@@ -88,7 +91,7 @@ public class Main {
 
     int tableToBeServed;
 
-    if(randomNr%3==0){
+    if (randomNr % 3 == 0) {
       tableToBeServed = new Random().nextInt(10);
       Table table = DinningHallContext.getInstance().getTables().get(tableToBeServed);
       table.waitServing();

@@ -3,11 +3,13 @@ package util;
 import entities.order.Food;
 import entities.order.Order;
 import entities.table.Table;
+import entities.table.TableStates;
 import entities.waiter.Waiter;
 import lombok.SneakyThrows;
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 
 public class DinningHallContext {
@@ -21,7 +23,7 @@ public class DinningHallContext {
 
   private int readyOrdersCount = 0;
 
-  private volatile List<Order> readyOrders = new LinkedList<>();
+  private final BlockingQueue<Order> readyOrders = new ArrayBlockingQueue<>(20);
 
   private static Semaphore semaphore = new Semaphore(1);
 
@@ -67,28 +69,40 @@ public class DinningHallContext {
     finishedOrdersCount++;
   }
 
-  public List<Order> getReadyOrders() {
+  public BlockingQueue<Order> getReadyOrders() {
     return readyOrders;
+  }
+
+  public boolean hasWaitingTables() {
+    if (!tables.isEmpty()){
+      for (Table table : tables) {
+        if (table.getState().equals(TableStates.WAITING_TO_MAKE_AN_ORDER)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public synchronized boolean hasReadyOrders(){
+    return !readyOrders.isEmpty();
+  }
+
+  @SneakyThrows
+  public synchronized Order getOrder(){
+    return readyOrders.take();
+  }
+
+  public synchronized void removeOrder(Order order){
+    readyOrders.remove(order);
   }
 
   @SneakyThrows
   public synchronized void addOrder(Order order) {
     readyOrders.add(order);
-    readyOrdersCount++;
-    System.out.println(readyOrdersCount);
 
-    semaphore.acquire();
-
-    Thread thread =
-        new Thread(
-            () -> {
-              for (Waiter waiter : waiters) {
-                waiter.serveOrder(order);
-              }
-            });
-
-    semaphore.release();
-
-    thread.start();
+    //    for (Waiter waiter : waiters) {
+    //      waiter.serveOrder(readyOrders.take());
+    //    }
   }
 }

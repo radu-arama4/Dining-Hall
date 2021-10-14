@@ -14,7 +14,7 @@ import java.util.Random;
 public class Table {
   private TableStates state;
 
-  private Order currentOrder;
+  private int currentOrderId;
 
   public Table() {
     state = TableStates.FREE;
@@ -43,9 +43,9 @@ public class Table {
     generatedOrder.setMaxWait((float) (maxPrepTime * 1.3));
     generatedOrder.setPickUpTime(new Timestamp(System.currentTimeMillis()));
 
-    currentOrder = generatedOrder;
+    currentOrderId = orderId;
 
-    log.info("Table is waiting for order " + currentOrder.getId());
+//    System.out.println("Table is waiting for order " + generatedOrder.getId());
 
     return generatedOrder;
   }
@@ -58,12 +58,12 @@ public class Table {
     return items;
   }
 
-  public Order getCurrentOrder() {
-    return currentOrder;
+  public int getCurrentOrderId() {
+    return currentOrderId;
   }
 
   public void freeTable() {
-    currentOrder = null;
+    currentOrderId = 0;
     state = TableStates.FREE;
   }
 

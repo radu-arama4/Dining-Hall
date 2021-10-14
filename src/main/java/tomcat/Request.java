@@ -10,7 +10,7 @@ import java.net.URL;
 
 @Slf4j
 public class Request {
-    public static void sentOrderToKitchen(Order order) {
+    public static void sendOrderToKitchen(Order order) {
         HttpURLConnection con = null;
         //host.docker.internal
         try {

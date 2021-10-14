@@ -40,9 +40,10 @@ public class Main {
   }
 
   private static List<Waiter> generateWaiters(int nrOfWaiters) {
+    Semaphore semaphore = new Semaphore(1);
     List<Waiter> waiters = new LinkedList<>();
     for (int i = 0; i < nrOfWaiters; i++) {
-      Waiter newWaiter = new Waiter();
+      Waiter newWaiter = new Waiter(semaphore);
       waiters.add(newWaiter);
     }
     return waiters;

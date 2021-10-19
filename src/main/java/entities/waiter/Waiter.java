@@ -37,7 +37,7 @@ public class Waiter implements Runnable {
 
     //    DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS+10
 
-    while (true) {
+    while (DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS) {
       if (DinningHallContext.getInstance().hasWaitingTables()) {
         synchronized (tables) {
           for (Table table : tables) {
@@ -66,28 +66,57 @@ public class Waiter implements Runnable {
 
   @SneakyThrows
   public synchronized void serveOrder(Order order) {
-    for (Table table : waitingTables) {
-      if (table.getCurrentOrderId() == order.getId()) {
-        TimeUnit.MILLISECONDS.sleep(2 * Properties.TIME_UNIT);
+    synchronized (waitingTables) {
+      for (Table table : waitingTables) {
+        if (table.getCurrentOrderId() == order.getId()) {
+          TimeUnit.MILLISECONDS.sleep(2 * Properties.TIME_UNIT);
 
-        table.freeTable();
-        waitingTables.remove(table);
+          semaphore.acquire();
 
-        order.setServingTime(new Timestamp(System.currentTimeMillis()));
+          table.freeTable();
+          waitingTables.remove(table);
 
-        DinningHallContext.getInstance().removeOrder(order);
+          order.setServingTime(new Timestamp(System.currentTimeMillis()));
 
-        logger.info(
-            "Order with ID "
-                + order.getId()
-                + " delivered in "
-                + ((float) (order.getServingTime().getTime() - order.getPickUpTime().getTime())
-                    / (float) 1000)
-                + " with max wait "
-                + ((order.getMaxWait()*Properties.TIME_UNIT)/ (float)1000)
-                + " with priority "
-                + order.getPriority());
-        return;
+          DinningHallContext.getInstance().removeOrder(order);
+
+          semaphore.release();
+
+          float deliveryTime =
+              ((float) (order.getServingTime().getTime() - order.getPickUpTime().getTime())
+                  / (float) 1000);
+
+          float maxWait = ((order.getMaxWait() * Properties.TIME_UNIT) / (float) 1000);
+
+          int rating = 0;
+
+          if (deliveryTime < maxWait) {
+            rating = 5;
+          } else if (deliveryTime < maxWait * 1.1) {
+            rating = 4;
+          } else if (deliveryTime < maxWait * 1.2) {
+            rating = 3;
+          } else if (deliveryTime < maxWait * 1.3) {
+            rating = 2;
+          } else if (deliveryTime < maxWait * 1.4) {
+            rating = 1;
+          } else {
+            rating = 0;
+          }
+
+          logger.info(
+              "Order with ID "
+                  + order.getId()
+                  + " delivered in "
+                  + deliveryTime
+                  + " with max wait "
+                  + maxWait
+                  + " with priority "
+                  + order.getPriority()
+                  + ". RATING - "
+                  + rating);
+          return;
+        }
       }
     }
   }

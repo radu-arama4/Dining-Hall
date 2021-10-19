@@ -17,7 +17,7 @@ public class Request {
     HttpURLConnection con = null;
     // host.docker.internal
     try {
-      URL url = new URL("http://localhost:8081/home");
+      URL url = new URL("http://host.docker.internal:8081/home");
       con = (HttpURLConnection) url.openConnection();
       con.setRequestMethod("POST");
     } catch (IOException e) {

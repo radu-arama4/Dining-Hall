@@ -47,13 +47,13 @@ public class Main {
 
     occupyTables();
 
-//    while (true){
-//      if (DinningHallContext.getInstance().getFinishedOrdersCount()==10){
-//        for (Thread thread1 : threads) {
-//          thread1.interrupt();
-//        }
-//      }
-//    }
+    while (true) {
+      if (DinningHallContext.getInstance().getFinishedOrdersCount() == 10) {
+        for (Thread thread1 : threads) {
+          thread1.interrupt();
+        }
+      }
+    }
 
     //    ApplicationManager.closeApplication();
   }
@@ -109,19 +109,21 @@ public class Main {
   public static void occupyTables() {
     ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    while (DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS) {
-      executorService.execute(
-          () -> {
-            int randomNr = new Random().nextInt(100);
+    synchronized (DinningHallContext.getInstance()) {
+      while (DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS) {
+        executorService.execute(
+            () -> {
+              int randomNr = new Random().nextInt(100);
 
-            int tableToBeServed;
+              int tableToBeServed;
 
-            if (randomNr % 3 == 0) {
-              tableToBeServed = new Random().nextInt(10);
-              Table table = DinningHallContext.getInstance().getTables().get(tableToBeServed);
-              table.waitServing();
-            }
-          });
+              if (randomNr % 3 == 0) {
+                tableToBeServed = new Random().nextInt(10);
+                Table table = DinningHallContext.getInstance().getTables().get(tableToBeServed);
+                table.waitServing();
+              }
+            });
+      }
     }
   }
 }

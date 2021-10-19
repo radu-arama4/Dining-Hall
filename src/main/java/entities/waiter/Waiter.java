@@ -35,8 +35,6 @@ public class Waiter implements Runnable {
     Order order;
     Table foundTable;
 
-    //    DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS+10
-
     while (DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS) {
       if (DinningHallContext.getInstance().hasWaitingTables()) {
         synchronized (tables) {
@@ -71,16 +69,12 @@ public class Waiter implements Runnable {
         if (table.getCurrentOrderId() == order.getId()) {
           TimeUnit.MILLISECONDS.sleep(2 * Properties.TIME_UNIT);
 
-          semaphore.acquire();
+          order.setServingTime(new Timestamp(System.currentTimeMillis()));
 
           table.freeTable();
           waitingTables.remove(table);
 
-          order.setServingTime(new Timestamp(System.currentTimeMillis()));
-
           DinningHallContext.getInstance().removeOrder(order);
-
-          semaphore.release();
 
           float deliveryTime =
               ((float) (order.getServingTime().getTime() - order.getPickUpTime().getTime())
@@ -100,8 +94,6 @@ public class Waiter implements Runnable {
             rating = 2;
           } else if (deliveryTime < maxWait * 1.4) {
             rating = 1;
-          } else {
-            rating = 0;
           }
 
           logger.info(

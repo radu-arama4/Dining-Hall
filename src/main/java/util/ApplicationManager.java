@@ -1,16 +1,17 @@
 package util;
 
 import org.apache.catalina.LifecycleException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import tomcat.TomcatManager;
 
 public class ApplicationManager {
-  private static Logger logger = LoggerFactory.getLogger(ApplicationManager.class);
+  private static final Logger logger = LogManager.getLogger(ApplicationManager.class);
   private static TomcatManager tomcatManager = new TomcatManager();
 
   public static void startApplication() {
     Thread serverThread = new Thread(tomcatManager);
+    Properties.readProperties();
     serverThread.start();
     logger.info("App started!");
   }

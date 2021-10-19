@@ -2,7 +2,6 @@ package entities.table;
 
 import entities.order.Food;
 import entities.order.Order;
-import lombok.extern.slf4j.Slf4j;
 import util.DinningHallContext;
 
 import java.sql.Timestamp;
@@ -10,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-@Slf4j
 public class Table {
   private TableStates state;
 
@@ -45,8 +43,6 @@ public class Table {
 
     currentOrderId = orderId;
 
-//    System.out.println("Table is waiting for order " + generatedOrder.getId());
-
     return generatedOrder;
   }
 
@@ -78,5 +74,4 @@ public class Table {
   public TableStates getState() {
     return state;
   }
-
 }

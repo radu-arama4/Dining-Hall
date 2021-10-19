@@ -90,7 +90,7 @@ public class DinningHallContext {
 
   @SneakyThrows
   public synchronized Order getOrder(){
-    return readyOrders.take();
+    return readyOrders.peek();
   }
 
   public synchronized void removeOrder(Order order){
@@ -104,5 +104,9 @@ public class DinningHallContext {
     //    for (Waiter waiter : waiters) {
     //      waiter.serveOrder(readyOrders.take());
     //    }
+  }
+
+  public static Semaphore getSemaphore() {
+    return semaphore;
   }
 }

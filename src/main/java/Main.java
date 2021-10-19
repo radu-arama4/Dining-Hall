@@ -1,23 +1,30 @@
 import entities.order.Food;
 import entities.table.Table;
 import entities.waiter.Waiter;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import util.ApplicationManager;
 import util.DinningHallContext;
+import util.OrderReceiveService;
+import util.Properties;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 public class Main {
-  static Semaphore semaphore = new Semaphore(1);
+  private static final Logger logger = LogManager.getLogger(Main.class);
 
   public static void main(String[] args) {
+
     ApplicationManager.startApplication();
 
-    generateTables(10);
-    generateWaiters(10);
+    generateTables(Properties.NR_OF_TABLES);
+    generateWaiters(Properties.NR_OF_WAITERS);
 
     DinningHallContext dinningHallContext = DinningHallContext.getInstance();
 
@@ -27,14 +34,26 @@ public class Main {
     dinningHallContext.setWaiters(waiters);
     dinningHallContext.setFoods(generateFood());
 
+    List<Thread> threads = new LinkedList<>();
+
     for (Waiter waiter : waiters) {
       Thread thread = new Thread(waiter);
+      threads.add(thread);
       thread.start();
     }
 
-    while (DinningHallContext.getInstance().getFinishedOrdersCount() < 10) {
-      occupyTables();
-    }
+    Thread thread = new Thread(new OrderReceiveService());
+    thread.start();
+
+    occupyTables();
+
+//    while (true){
+//      if (DinningHallContext.getInstance().getFinishedOrdersCount()==10){
+//        for (Thread thread1 : threads) {
+//          thread1.interrupt();
+//        }
+//      }
+//    }
 
     //    ApplicationManager.closeApplication();
   }
@@ -88,14 +107,21 @@ public class Main {
   }
 
   public static void occupyTables() {
-    int randomNr = new Random().nextInt(100);
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    int tableToBeServed;
+    while (DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS) {
+      executorService.execute(
+          () -> {
+            int randomNr = new Random().nextInt(100);
 
-    if (randomNr % 3 == 0) {
-      tableToBeServed = new Random().nextInt(10);
-      Table table = DinningHallContext.getInstance().getTables().get(tableToBeServed);
-      table.waitServing();
+            int tableToBeServed;
+
+            if (randomNr % 3 == 0) {
+              tableToBeServed = new Random().nextInt(10);
+              Table table = DinningHallContext.getInstance().getTables().get(tableToBeServed);
+              table.waitServing();
+            }
+          });
     }
   }
 }

@@ -2,6 +2,8 @@ package tomcat;
 
 import com.google.gson.Gson;
 import entities.order.Order;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import util.DinningHallContext;
 import util.JsonUtil;
 
@@ -11,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class Servlet extends HttpServlet {
+  private static final Logger logger = LogManager.getLogger(Servlet.class);
+
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     resp.setStatus(HttpServletResponse.SC_OK);
@@ -27,7 +31,7 @@ public class Servlet extends HttpServlet {
 
     Order receivedOrder = gson.fromJson(payloadRequest, Order.class);
 
-    System.out.println("Received ready order with ID:" + receivedOrder.getId());
+    logger.info("Received ready order with ID:" + receivedOrder.getId());
 
     DinningHallContext.getInstance().addOrder(receivedOrder);
 

@@ -4,9 +4,12 @@ import entities.order.Order;
 import entities.table.Table;
 import entities.table.TableStates;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import util.DinningHallContext;
+import util.Properties;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -15,9 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 import static tomcat.Request.sendOrderToKitchen;
 
-@Slf4j
 public class Waiter implements Runnable {
-  private BlockingQueue<Table> waitingTables = new ArrayBlockingQueue<>(50);
+  private static final Logger logger = LogManager.getLogger(Waiter.class);
+  private final BlockingQueue<Table> waitingTables = new ArrayBlockingQueue<>(50);
 
   private final Semaphore semaphore;
 
@@ -32,41 +35,31 @@ public class Waiter implements Runnable {
     Order order;
     Table foundTable;
 
+    //    DinningHallContext.getInstance().getFinishedOrdersCount() < Properties.NR_OF_ORDERS+10
+
     while (true) {
       if (DinningHallContext.getInstance().hasWaitingTables()) {
-        for (Table table : tables) {
-          synchronized (table) {
+        synchronized (tables) {
+          for (Table table : tables) {
             if (table.getState().equals(TableStates.WAITING_TO_MAKE_AN_ORDER)) {
-              order = table.makeOrder();
               foundTable = table;
-            }else {
+              foundTable.waitOrder();
+            } else {
+              DinningHallContext.getSemaphore().release();
               continue;
             }
-          }
+            order = table.makeOrder();
+            TimeUnit.MILLISECONDS.sleep(2 * Properties.TIME_UNIT);
 
-          TimeUnit.SECONDS.sleep(2);
-
-          if (foundTable.getState().equals(TableStates.WAITING_TO_MAKE_AN_ORDER)) {
             waitingTables.add(foundTable);
-            foundTable.waitOrder();
-
-            System.out.println("Waiting tables: ");
-            waitingTables.forEach(
-                table1 -> {
-                  System.out.print(table1.getCurrentOrderId() + " ");
-                });
-
-            System.out.println();
 
             DinningHallContext.getInstance().increaseOrdersCount();
 
-            sendOrderToKitchen(order);
+            Order finalOrder = order;
+            Thread sendingThread = new Thread(() -> sendOrderToKitchen(finalOrder));
+            sendingThread.start();
           }
         }
-      }
-      if (DinningHallContext.getInstance().hasReadyOrders()) {
-        Order readyOrder = DinningHallContext.getInstance().getOrder();
-        serveOrder(readyOrder);
       }
     }
   }
@@ -75,25 +68,27 @@ public class Waiter implements Runnable {
   public synchronized void serveOrder(Order order) {
     for (Table table : waitingTables) {
       if (table.getCurrentOrderId() == order.getId()) {
-        try {
-          TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
+        TimeUnit.MILLISECONDS.sleep(2 * Properties.TIME_UNIT);
 
         table.freeTable();
         waitingTables.remove(table);
 
+        order.setServingTime(new Timestamp(System.currentTimeMillis()));
+
         DinningHallContext.getInstance().removeOrder(order);
 
-        System.out.println("Order with ID " + order.getId() + " is being served!");
-
+        logger.info(
+            "Order with ID "
+                + order.getId()
+                + " delivered in "
+                + ((float) (order.getServingTime().getTime() - order.getPickUpTime().getTime())
+                    / (float) 1000)
+                + " with max wait "
+                + ((order.getMaxWait()*Properties.TIME_UNIT)/ (float)1000)
+                + " with priority "
+                + order.getPriority());
         return;
       }
     }
-  }
-
-  public BlockingQueue<Table> getWaitingTables() {
-    return waitingTables;
   }
 }
